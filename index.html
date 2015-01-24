@@ -13,19 +13,15 @@ html, body, select, input, pre {
 <table>
   <tr>
     <td>Average Collected Intel Per Day: </td>
-    <td><input id="intel" value="100"></td>
+    <td><input id="intel" value="100" onchange='run()'></td>
   </tr>
   <tr>
     <td>Simulation Duration Days:</td>
-    <td><input id="durationDays" value="60"></td>
+    <td><input id="durationDays" value="60" onchange='run()'></td>
   </tr>
   <tr>
     <td>Target Base (Fixed Base Strategy): </td>
-    <td><select id="targetBase"></select></td>
-  </tr>
-  <tr>
-    <td></td>
-    <td><input type='button' value="Simulate!" onclick="run()"></td>
+    <td><select id="targetBase" onchange='run()'></select></td>
   </tr>
 </table>
 
