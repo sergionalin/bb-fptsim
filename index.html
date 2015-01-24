@@ -1,0 +1,334 @@
+<html>
+<head>
+
+<style>
+html, body, select, input {
+  font-family: courier;
+}
+</style>
+</head>
+
+<body>
+
+<table>
+  <tr>
+    <td>Average Collected Intel Per Day: </td>
+    <td><input id="intel" value="100"></td>
+  </tr>
+  <tr>
+    <td>Simulation Duration Days:</td>
+    <td><input id="durationDays" value="60"></td>
+  </tr>
+  <tr>
+    <td>Target Base (Fixed Base Strategy): </td>
+    <td><select id="targetBase"></select></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><input type='button' value="Simulate!" onclick="run()"></td>
+  </tr>
+</table>
+
+<hr>
+
+<table width='100%'>
+  <tr width='100%'>
+    <td valign='top'>
+      Fixed base strategy<br>
+      (attack as soon as the necessary intel has been gathered)
+      <hr>
+    </td>
+    <td valign='top'>
+      Attack as soon as possible<br>
+      (as soon as an operation is over attack the best available base with the intel currently available)
+      <hr>
+    </td>
+  </tr>
+  <tr width='100%'>
+    <td valign='top'>
+      <pre id="str1"></pre>
+    </td>
+    <td valign='top'>
+      <pre id="str2"></pre>
+    </td>
+  </tr>
+</table>
+
+<script>
+
+var bases = [
+  {
+    name: 'milk run',
+    intelCost: 25,
+    pts: 40
+  },
+  {
+    name: 'early bird',
+    intelCost: 35,
+    pts: 60
+  },
+  {
+    name: 'venus flytrap',
+    intelCost: 45,
+    pts: 85
+  },
+  {
+    name: 'full monty',
+    intelCost: 60,
+    pts: 115
+  },
+  {
+    name: 'pencilneck',
+    intelCost: 75,
+    pts: 150
+  },
+  {
+    name: 'charleston',
+    intelCost: 90,
+    pts: 185
+  },
+  {
+    name: 'ticker tape',
+    intelCost: 105,
+    pts: 225
+  },
+  {
+    name: 'tank tango',
+    intelCost: 120,
+    pts: 265
+  },
+  {
+    name: 'hacksaw',
+    intelCost: 135,
+    pts: 310
+  },
+  {
+    name: 'upper lip',
+    intelCost: 155,
+    pts: 360
+  },
+  {
+    name: 'powder keg',
+    intelCost: 175,
+    pts: 415
+  },
+  {
+    name: 'mambo',
+    intelCost: 200,
+    pts: 475
+  },
+  {
+    name: 'sour grapes',
+    intelCost: 225,
+    pts: 540
+  },
+  {
+    name: 'bottleneck',
+    intelCost: 250,
+    pts: 610
+  },
+  {
+    name: 'tinderbox',
+    intelCost: 280,
+    pts: 690
+  },
+  {
+    name: 'foxtrot',
+    intelCost: 310,
+    pts: 780
+  },
+  {
+    name: 'stronghold',
+    intelCost: 340,
+    pts: 880
+  },
+  {
+    name: 'choke point',
+    intelCost: 380,
+    pts: 990
+  },
+  {
+    name: 'curtain call',
+    intelCost: 420,
+    pts: 1110
+  },
+  {
+    name: 'dead end',
+    intelCost: 460,
+    pts: 1250
+  },
+];
+
+function getBestBaseForIntel(availableIntel) {
+  // O(log2n) maybe another day
+  for (var i = bases.length - 1; i >= 0; i--) {
+    if (bases[i].intelCost <= availableIntel) return bases[i];
+  }
+  return null;
+}
+
+function padLeft(s, n) {
+  if (s.length >= n) {
+    return s;
+  }
+  var max = n - s.length;
+  for (var i = 0; i < max; i++) {
+    s = "&nbsp;" + s;
+  }
+  return s;
+}
+
+function padRight(s, n) {
+  if (s.length >= n) {
+    return s;
+  }
+  var max = n - s.length;
+  for (var i = 0; i < max; i++) {
+    s += "&nbsp;";
+  }
+  return s;
+}
+
+// Fill in base dropdown
+var select = document.getElementById("targetBase");
+for (var i = 0; i < bases.length; i++) {
+  var opt = document.createElement('option');
+  opt.value = i;
+  if (bases[i].intelCost == 155) opt.selected = true;
+  opt.innerHTML = padRight(bases[i].name.toUpperCase(), 15) + "(intel required: "+padLeft(""+bases[i].intelCost, 3)+", reward points: "+padLeft(""+bases[i].pts, 4)+")";
+  select.appendChild(opt);
+}
+
+// Variables common to all simulated strategies
+var startingIntel = 0;
+var startingPts = 0;
+// Average intel per day collected by the whole team
+var avgIntelPerDay = 100;
+var avgIntelPerMinute = avgIntelPerDay / (24 * 60);
+
+// These are constants
+var OPERATION_LENGTH_HOURS = 24;
+var PTS_DAILY_LOSS_PRC = 5;
+
+function run() {
+  avgIntelPerDay = document.getElementById("intel").value;
+  avgIntelPerMinute = avgIntelPerDay / (24 * 60);
+  var fixedBase = bases[select.selectedIndex];
+  var simulationDurationDays = document.getElementById("durationDays").value;;
+  document.getElementById("str1").innerHTML = fixedBaseStrategy(fixedBase, simulationDurationDays);
+  document.getElementById("str2").innerHTML = asSoonAsPossibleStrategy(simulationDurationDays);
+}
+
+
+function getHumanTime(minute) {
+  var day = Math.floor(minute / (24 * 60));
+  var hour = Math.floor((minute - day * 24 * 60) / 60);
+  var minute = minute - day * 24 * 60 - hour * 60;
+  return "day "+day+" hh:mm "+hour+":"+minute;
+}
+
+function fixedBaseStrategy(base, simulationLengthDays) {
+  var out = "";
+
+  // Simulation starts from day 0 at startingPts and with startingIntel.
+  // Assumption: every attack is 100% successful
+  // Strategy: start a new attack as soon as the previous one is over
+  //           AND as soon as collected intel is enough to attack the desired base.
+  var intel = startingIntel;
+  var pts = startingPts;
+  var attacking = false;
+  var attackStartTime = -1;
+  var attackCount = 0;
+  // Time spent gathering intel outside of the attack time
+  var idleTimeMins = 0;
+  for(var minute = 1; minute <= simulationLengthDays * 24 * 60; minute++) {
+    intel += avgIntelPerMinute;
+    if (attacking) {
+      if (minute > attackStartTime + OPERATION_LENGTH_HOURS * 60) {
+        // Done attacking
+        attacking = false;
+        // Get force pts
+        pts += base.pts;
+        out += "  > completed attack #"+attackCount+" at "+getHumanTime(minute) + "\n";
+      }
+    } else {
+      if (intel >= base.intelCost) {
+        intel -= base.intelCost;
+        attackStartTime = minute;
+        attacking = true;
+        attackCount += 1;
+        out += "  > started attack #"+attackCount+" at "+getHumanTime(minute) + "\n";
+      } else {
+        // Can't attack yet. Keep gathering intel
+        idleTimeMins += 1;
+      }
+    }
+    if ((minute % (24*60)) == 0) {
+      // Lose 5% force points
+      // Better being conservative here.
+      // Don't know what rounding strategy is BB actually using.
+      pts = Math.floor(pts * (1 - PTS_DAILY_LOSS_PRC/100));
+      // Print some stats
+      out += "Day "+Math.floor(minute / (24 * 60))+" completed. attacks: "+attackCount+", pts: "+pts+", intel: "+Math.round(intel) + "\n";
+    }
+  }
+  return "Simulation done.\nPts gained: "+(pts - startingPts)+"\nAttacks: "+attackCount+"\nIdle Time: "+getHumanTime(idleTimeMins)+"\n\n" +out;
+}
+
+function asSoonAsPossibleStrategy(simulationLengthDays) {
+
+  var out = "";
+
+  // Simulation starts from day 0 at startingPts and with startingIntel.
+  // Assumption: every attack is 100% successful
+  // Strategy: start a new attack as soon as the previous one is over
+  //           AND as soon as collected intel is enough to attack ANY base.
+  var intel = startingIntel;
+  var pts = startingPts;
+  var attackedBase = null;
+  var attacking = false;
+  var attackStartTime = -1;
+  var attackCount = 0;
+  // Time spent gathering intel outside of the attack time
+  var idleTimeMins = 0;
+  for(var minute = 1; minute <= simulationLengthDays * 24 * 60; minute++) {
+    intel += avgIntelPerMinute;
+    if (attacking) {
+      if (minute > attackStartTime + OPERATION_LENGTH_HOURS * 60) {
+        // Done attacking
+        attacking = false;
+        // Get force pts
+        pts += attackedBase.pts;
+        attackedBase = null;
+        out += "  > completed attack #"+attackCount+" at "+getHumanTime(minute) + "\n";
+      }
+    } else {
+      if (intel >= bases[0].intelCost) {
+        attackedBase = getBestBaseForIntel(intel);
+        intel -= attackedBase.intelCost;
+        attackStartTime = minute;
+        attacking = true;
+        attackCount += 1;
+        out += "  > started attack #"+attackCount+" on base w/ intel "+attackedBase.intelCost+" at "+getHumanTime(minute) + "\n";
+      } else {
+        // Can't attack yet. Keep gathering intel
+        idleTimeMins += 1;
+      }
+    }
+    if ((minute % (24*60)) == 0) {
+      // Lose 5% force points
+      // Better being conservative here.
+      // Don't know what rounding strategy is BB actually using.
+      pts = Math.floor(pts * (1 - PTS_DAILY_LOSS_PRC/100));
+      // Print some stats
+      out += "Day "+Math.floor(minute / (24 * 60))+" completed. attacks: "+attackCount+", pts: "+pts+", intel: "+Math.round(intel) + "\n";
+    }
+  }
+  return "Simulation done.\nPts gained: "+(pts - startingPts)+"\nAttacks: "+attackCount+"\nIdle Time: "+getHumanTime(idleTimeMins)+"\n\n" + out;
+}
+
+
+
+</script>
+</body>
+</html>
