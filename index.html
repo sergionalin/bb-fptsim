@@ -5,6 +5,15 @@
 html, body, select, input, pre {
   font-family: courier;
 }
+#baseFailureRates {
+  border-collapse: collapse;
+}
+#baseFailureRates td {
+  padding-left: 10px;
+  border: 1px solid grey;
+  border-collapse: collapse;
+}
+
 </style>
 </head>
 
@@ -23,8 +32,21 @@ html, body, select, input, pre {
     <td>Target Base (Fixed Base Strategy): </td>
     <td><select id="targetBase" onchange='run()'></select></td>
   </tr>
+  <tr>
+    <td>Failure stats: </td>
+    <td>
+      <table id="baseFailureRates">
+        <tr>
+          <td>Base</td>
+          <td>Intel</td>
+          <td>Pts</td>
+          <td>Failure probability %</td>
+          <td>Pts loss in case of failure</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
 </table>
-
 <hr>
 
 <table width='100%'>
@@ -56,102 +78,142 @@ var bases = [
   {
     name: 'milk run',
     intelCost: 25,
-    pts: 40
+    pts: 40,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'early bird',
     intelCost: 35,
-    pts: 60
+    pts: 60,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'venus flytrap',
     intelCost: 45,
-    pts: 85
+    pts: 85,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'full monty',
     intelCost: 60,
-    pts: 115
+    pts: 115,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'pencilneck',
     intelCost: 75,
-    pts: 150
+    pts: 150,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'charleston',
     intelCost: 90,
-    pts: 185
+    pts: 185,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'ticker tape',
     intelCost: 105,
-    pts: 225
+    pts: 225,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'tank tango',
     intelCost: 120,
-    pts: 265
+    pts: 265,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'hacksaw',
     intelCost: 135,
-    pts: 310
+    pts: 310,
+    failProbPrc: 0,
+    ptsLossOnFail: 0
   },
   {
     name: 'upper lip',
     intelCost: 155,
-    pts: 360
+    pts: 360,
+    failProbPrc: 20,
+    ptsLossOnFail: 80
   },
   {
     name: 'powder keg',
     intelCost: 175,
-    pts: 415
+    pts: 415,
+    failProbPrc: 100,
+    ptsLossOnFail: 200
   },
   {
     name: 'mambo',
     intelCost: 200,
-    pts: 475
+    pts: 475,
+    failProbPrc: 100,
+    ptsLossOnFail: 475
   },
   {
     name: 'sour grapes',
     intelCost: 225,
-    pts: 540
+    pts: 540,
+    failProbPrc: 100,
+    ptsLossOnFail: 540
   },
   {
     name: 'bottleneck',
     intelCost: 250,
-    pts: 610
+    pts: 610,
+    failProbPrc: 100,
+    ptsLossOnFail: 610
   },
   {
     name: 'tinderbox',
     intelCost: 280,
-    pts: 690
+    pts: 690,
+    failProbPrc: 100,
+    ptsLossOnFail: 690
   },
   {
     name: 'foxtrot',
     intelCost: 310,
-    pts: 780
+    pts: 780,
+    failProbPrc: 100,
+    ptsLossOnFail: 780
   },
   {
     name: 'stronghold',
     intelCost: 340,
-    pts: 880
+    pts: 880,
+    failProbPrc: 100,
+    ptsLossOnFail: 880
   },
   {
     name: 'choke point',
     intelCost: 380,
-    pts: 990
+    pts: 990,
+    failProbPrc: 100,
+    ptsLossOnFail: 990
   },
   {
     name: 'curtain call',
     intelCost: 420,
-    pts: 1110
+    pts: 1110,
+    failProbPrc: 100,
+    ptsLossOnFail: 1110
   },
   {
     name: 'dead end',
     intelCost: 460,
-    pts: 1250
+    pts: 1250,
+    failProbPrc: 100,
+    ptsLossOnFail: 1250
   },
 ];
 
@@ -161,6 +223,42 @@ function getBestBaseForIntel(availableIntel) {
     if (bases[i].intelCost <= availableIntel) return bases[i];
   }
   return null;
+}
+
+function buildBaseDropdown() {
+  var select = document.getElementById("targetBase");
+  for (var i = 0; i < bases.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = i;
+    if (bases[i].intelCost == 155) opt.selected = true;
+    opt.innerHTML = padRight(bases[i].name.toUpperCase(), 15) + "(intel required: "+padLeft(""+bases[i].intelCost, 3)+", reward points: "+padLeft(""+bases[i].pts, 4)+")";
+    select.appendChild(opt);
+  }
+}
+
+function buildBaseFailureStatsInputs() {
+  var el = document.getElementById("baseFailureRates");
+  for (var i = 0; i < bases.length; i++) {
+    var container = document.createElement('tr');
+    var base = bases[i];
+    container.innerHTML =
+      "<td>"+base.name.toUpperCase()+"</td>"+
+      "<td>"+base.intelCost+"</td>"+
+      "<td>"+base.pts+"</td>"+
+      "<td><input id='failProbPrc"+i+"' value='"+base.failProbPrc+"' size='5' onchange='run()'>%</td>"+
+      "<td><input id='ptsLoss"+i+"' value='"+base.ptsLossOnFail+"' size='5' onchange='run()'></td>";
+    el.appendChild(container);
+  }
+}
+
+function readFailureStats() {
+  for (var i = 0; i < bases.length; i++) {
+    var base = bases[i];
+    var fp = document.getElementById("failProbPrc"+i);
+    var pl = document.getElementById("ptsLoss"+i);
+    base.failProbPrc = fp.value;
+    base.ptsLossOnFail = pl.value;
+  }
 }
 
 function padLeft(s, n) {
@@ -185,15 +283,16 @@ function padRight(s, n) {
   return s;
 }
 
-// Fill in base dropdown
-var select = document.getElementById("targetBase");
-for (var i = 0; i < bases.length; i++) {
-  var opt = document.createElement('option');
-  opt.value = i;
-  if (bases[i].intelCost == 155) opt.selected = true;
-  opt.innerHTML = padRight(bases[i].name.toUpperCase(), 15) + "(intel required: "+padLeft(""+bases[i].intelCost, 3)+", reward points: "+padLeft(""+bases[i].pts, 4)+")";
-  select.appendChild(opt);
+Math.seed = 6;
+function getRandomInt(min, max) {
+    Math.seed = (Math.seed * 9301 + 49297) % 233280;
+    var rnd = Math.seed / 233280;
+    return Math.floor(rnd * (max - min)) + min;
 }
+
+buildBaseDropdown();
+buildBaseFailureStatsInputs();
+
 
 // Variables common to all simulated strategies
 var startingIntel = 0;
@@ -207,10 +306,13 @@ var OPERATION_LENGTH_HOURS = 24;
 var PTS_DAILY_LOSS_PRC = 5;
 
 function run() {
+  // Reset seed (we want repeatable results)
+  Math.seed = 6;
   avgIntelPerDay = document.getElementById("intel").value;
   avgIntelPerMinute = avgIntelPerDay / (24 * 60);
-  var fixedBase = bases[select.selectedIndex];
-  var simulationDurationDays = document.getElementById("durationDays").value;;
+  var fixedBase = bases[document.getElementById("targetBase").selectedIndex];
+  var simulationDurationDays = document.getElementById("durationDays").value;
+  readFailureStats();
   document.getElementById("str1").innerHTML = fixedBaseStrategy(fixedBase, simulationDurationDays);
   document.getElementById("str2").innerHTML = asSoonAsPossibleStrategy(simulationDurationDays);
 }
@@ -235,6 +337,7 @@ function fixedBaseStrategy(base, simulationLengthDays) {
   var attacking = false;
   var attackStartTime = -1;
   var attackCount = 0;
+  var failedAttackCount = 0;
   // Time spent gathering intel outside of the attack time
   var idleTimeMins = 0;
   for(var minute = 1; minute <= simulationLengthDays * 24 * 60; minute++) {
@@ -244,8 +347,11 @@ function fixedBaseStrategy(base, simulationLengthDays) {
         // Done attacking
         attacking = false;
         // Get force pts
-        pts += base.pts;
-        out += "  > completed attack #"+attackCount+" at "+getHumanTime(minute) + "\n";
+        var fail = (getRandomInt(0,100) < base.failProbPrc);
+        if (fail) failedAttackCount += 1;
+        var ptsLoss = fail ? base.ptsLossOnFail : 0;
+        pts += base.pts - ptsLoss;
+        out += "  > completed attack #"+attackCount+" at "+getHumanTime(minute) + (fail ? ". Pts lost due to failed attack: "+ptsLoss : "") + "\n";
       }
     } else {
       if (intel >= base.intelCost) {
@@ -268,7 +374,13 @@ function fixedBaseStrategy(base, simulationLengthDays) {
       out += "Day "+Math.floor(minute / (24 * 60))+" completed. attacks: "+attackCount+", pts: "+pts+", intel: "+Math.round(intel) + "\n";
     }
   }
-  return "Simulation done.\nPts gained: "+(pts - startingPts)+"\nAttacks: "+attackCount+"\nIdle Time: "+getHumanTime(idleTimeMins)+"\n\n" +out;
+  return "Simulation Done.\n"+
+    "Pts Gained: "+(pts - startingPts)+"\n"+
+    "Tot Attacks: "+attackCount+"\n"+
+    "Failed Attacks: "+failedAttackCount+"\n"+
+    "Idle Time: "+getHumanTime(idleTimeMins)+"\n"+
+    "Intel Left: "+intel+"\n\n"+
+    out;
 }
 
 function asSoonAsPossibleStrategy(simulationLengthDays) {
@@ -285,6 +397,7 @@ function asSoonAsPossibleStrategy(simulationLengthDays) {
   var attacking = false;
   var attackStartTime = -1;
   var attackCount = 0;
+  var failedAttackCount = 0;
   // Time spent gathering intel outside of the attack time
   var idleTimeMins = 0;
   for(var minute = 1; minute <= simulationLengthDays * 24 * 60; minute++) {
@@ -293,10 +406,14 @@ function asSoonAsPossibleStrategy(simulationLengthDays) {
       if (minute > attackStartTime + OPERATION_LENGTH_HOURS * 60) {
         // Done attacking
         attacking = false;
+
         // Get force pts
-        pts += attackedBase.pts;
+        var fail = (getRandomInt(0,100) < attackedBase.failProbPrc);
+        if (fail) failedAttackCount += 1;
+        var ptsLoss = fail ? attackedBase.ptsLossOnFail : 0;
+        pts += attackedBase.pts - ptsLoss;
         attackedBase = null;
-        out += "  > completed attack #"+attackCount+" at "+getHumanTime(minute) + "\n";
+        out += "  > completed attack #"+attackCount+" at "+getHumanTime(minute) + (fail ? ". Pts lost due to failed attack: "+ptsLoss : "") + "\n";
       }
     } else {
       if (intel >= bases[0].intelCost) {
@@ -320,9 +437,18 @@ function asSoonAsPossibleStrategy(simulationLengthDays) {
       out += "Day "+Math.floor(minute / (24 * 60))+" completed. attacks: "+attackCount+", pts: "+pts+", intel: "+Math.round(intel) + "\n";
     }
   }
-  return "Simulation done.\nPts gained: "+(pts - startingPts)+"\nAttacks: "+attackCount+"\nIdle Time: "+getHumanTime(idleTimeMins)+"\n\n" + out;
+  return "Simulation Done.\n"+
+    "Pts Gained: "+(pts - startingPts)+"\n"+
+    "Tot Attacks: "+attackCount+"\n"+
+    "Failed Attacks: "+failedAttackCount+"\n"+
+    "Idle Time: "+getHumanTime(idleTimeMins)+"\n"+
+    "Intel Left: "+intel+"\n\n"+
+    out;
 }
 
+
+// Run with default settings
+run();
 
 
 </script>
