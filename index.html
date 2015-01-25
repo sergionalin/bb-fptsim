@@ -1,27 +1,42 @@
 <html>
 <head>
-
-<style>
-html, body, select, input, pre {
-  font-family: courier;
-}
-#baseFailureRates {
-  border-collapse: collapse;
-}
-#baseFailureRates td {
-  padding-left: 10px;
-  border: 1px solid grey;
-  border-collapse: collapse;
-}
-
-</style>
+  <title>BB Force Points Simulator</title>
+  <style>
+    html, body, select, input, pre {
+      font-family: courier;
+    }
+    #baseFailureRates {
+      border-collapse: collapse;
+    }
+    #baseFailureRates td {
+      padding-left: 10px;
+      border: 1px solid grey;
+      border-collapse: collapse;
+    }
+  </style>
 </head>
 
 <body>
 
+<h1>Force Points Simulator for Supercell's Boom Beach Operations</h1>
+By Tuballo
+<h1>About:</h1>
+<p>This tool is intended to simulate the result, in terms of force points collected over a period of time, of different attack strategies.</p>
+<p>Its goal is to help teams figure out what strategy works best given their current intel-collection capabilities and attack effectiveness.</p>
+<p>As of today, only two strategies are supported:
+  <ul>
+    <li>Fixed base strategy: the team always attacks a fixed base as soon as enough intel has been collected.<br>
+      This strategy usually means that attacks are further spaced apart as more time is needed to collect intel</li>
+    <li>As-soon-as-possible strategy: the team always attacks the best first feasible base with the intel available when the previous operation completes.<br>
+      This strategy does not waste any time waiting for more intel to be available.</li>
+  </ul>
+</p>
+
+<h1>Enter input data here:</h1>
+<p><u>Enter values representing your team's current stats.</u></p>
 <table>
   <tr>
-    <td>Average Collected Intel Per Day: </td>
+    <td>Average Collected Intel Per Day (Whole Team): </td>
     <td><input id="intel" value="100" onchange='run()'></td>
   </tr>
   <tr>
@@ -29,7 +44,7 @@ html, body, select, input, pre {
     <td><input id="durationDays" value="60" onchange='run()'></td>
   </tr>
   <tr>
-    <td>Target Base (Fixed Base Strategy): </td>
+    <td>Target Base (for Fixed Base Strategy): </td>
     <td><select id="targetBase" onchange='run()'></select></td>
   </tr>
   <tr>
@@ -47,7 +62,8 @@ html, body, select, input, pre {
     </td>
   </tr>
 </table>
-<hr>
+
+<h1>Results are here:</h1>
 
 <table width='100%'>
   <tr width='100%'>
@@ -380,7 +396,7 @@ function fixedBaseStrategy(base, simulationLengthDays) {
     "Failed Attacks: "+failedAttackCount+"\n"+
     "Idle Time: "+getHumanTime(idleTimeMins)+"\n"+
     "Intel Left: "+intel+"\n\n"+
-    out;
+    "Attack log: \n"+out;
 }
 
 function asSoonAsPossibleStrategy(simulationLengthDays) {
@@ -443,7 +459,7 @@ function asSoonAsPossibleStrategy(simulationLengthDays) {
     "Failed Attacks: "+failedAttackCount+"\n"+
     "Idle Time: "+getHumanTime(idleTimeMins)+"\n"+
     "Intel Left: "+intel+"\n\n"+
-    out;
+    "Attack log: \n"+out;
 }
 
 
